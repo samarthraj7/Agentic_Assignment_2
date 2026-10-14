@@ -1,0 +1,17 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+.pytest_cache/
+
+# generated / downloaded artifacts (rebuild with scripts/fetch_corpus.sh + python -m src.rag.ingest)
+corpus/
+chroma_index/
+.models/
+state.sqlite*
+*.log
+
+# course materials
+*.pdf
+docs.zip

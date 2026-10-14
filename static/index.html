@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CSCI 599 A2 — Multi-Agent RAG</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1>Multi-Agent RAG <small>LangGraph supervisor · Gemini + NVIDIA · Tavily MCP</small></h1>
+    <button id="reset" type="button">New session</button>
+  </header>
+  <main>
+    <section id="chat">
+      <div id="log" aria-live="polite"></div>
+      <form id="form">
+        <textarea id="query" rows="2" placeholder="Ask about LangGraph, LangChain, FastAPI, or current events…" required></textarea>
+        <button id="send" type="submit">Send</button>
+      </form>
+    </section>
+    <aside>
+      <details open><summary>Routing</summary><div id="routing"></div></details>
+      <details open><summary>Trace</summary><ol id="trace"></ol></details>
+      <details open><summary>Citations</summary><ol id="citations"></ol></details>
+    </aside>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

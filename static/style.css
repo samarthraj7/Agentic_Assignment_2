@@ -1,0 +1,29 @@
+:root { --bg: #0f1115; --panel: #171a21; --line: #2a2f3a; --fg: #e6e8ec; --dim: #8b93a3; --acc: #6ea8ff; }
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.5 system-ui, sans-serif; background: var(--bg); color: var(--fg); height: 100vh; display: flex; flex-direction: column; }
+header { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+h1 { font-size: 16px; margin: 0; } h1 small { color: var(--dim); font-weight: 400; margin-left: 8px; }
+main { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 380px; min-height: 0; }
+#chat { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--line); }
+#log { flex: 1; overflow-y: auto; padding: 16px; }
+.turn { margin-bottom: 20px; }
+.user { background: #1f2633; padding: 8px 12px; border-radius: 8px; white-space: pre-wrap; }
+.seg { margin-top: 10px; white-space: pre-wrap; }
+.seg .who { display: inline-block; font-size: 11px; text-transform: uppercase; color: var(--dim); margin-bottom: 2px; }
+.meta { color: var(--dim); font-size: 12px; margin-top: 6px; }
+.err { color: #ff7b72; }
+a.cite { color: var(--acc); text-decoration: none; font-size: 12px; }
+form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
+textarea { flex: 1; resize: vertical; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 8px; font: inherit; }
+button { background: var(--acc); color: #000; border: 0; border-radius: 6px; padding: 8px 14px; font-weight: 600; cursor: pointer; }
+button:disabled { opacity: .5; cursor: wait; }
+aside { overflow-y: auto; padding: 8px 12px; background: var(--panel); }
+details { margin-bottom: 10px; } summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+ol { padding-left: 18px; margin: 4px 0; } li { margin-bottom: 6px; font-size: 12px; word-break: break-word; }
+.badge { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 10px; margin-right: 4px; font-weight: 600; color: #000; }
+.agent_route { background: #ffd166; } .llm_route { background: #6ea8ff; } .rag_retrieval { background: #7ee787; }
+.mcp_tool_call { background: #d2a8ff; } .worker_done { background: #8b93a3; } .error { background: #ff7b72; }
+.route { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; font-size: 12px; }
+.route b { color: var(--acc); }
+.dim { color: var(--dim); }
+@media (max-width: 860px) { main { grid-template-columns: 1fr; } aside { max-height: 40vh; } }
