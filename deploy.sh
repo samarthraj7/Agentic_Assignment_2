@@ -3,12 +3,21 @@
 # GOOGLE_API_KEY / NVIDIA_API_KEY / TAVILY_API_KEY in the local .env.
 set -euo pipefail
 cd "$(dirname "$0")"
+export PATH="/opt/homebrew/bin:/usr/local/bin:${PATH}"
 
-: "${GCP_PROJECT_ID:?set GCP_PROJECT_ID}"
+set -a
+# shellcheck disable=SC1091
+source .env
+set +a
+
+: "${GCP_PROJECT_ID:?set GCP_PROJECT_ID in .env or the shell}"
 : "${GCP_REGION:=us-west1}"
 : "${CLOUD_RUN_SERVICE:=multi-agent-rag}"
 
-set -a; source .env; set +a
+if ! command -v gcloud >/dev/null; then
+  echo "gcloud not found. Install the Google Cloud SDK, then re-run." >&2
+  exit 127
+fi
 
 gcloud config set project "$GCP_PROJECT_ID"
 gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com

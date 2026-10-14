@@ -1,0 +1,17 @@
+.git
+.venv
+.env
+__pycache__
+*.pyc
+.DS_Store
+.pytest_cache
+corpus
+.models
+state.sqlite*
+*.log
+*.pdf
+docs.zip
+tests
+docs
+ingest.log
+.cursor
