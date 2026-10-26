@@ -24,8 +24,13 @@ async def load_tavily_tools() -> tuple[list[BaseTool], str]:
     """Returns (tools, status). A dead MCP endpoint yields no tools, never an exception."""
     if not config.TAVILY_API_KEY:
         return [], "TAVILY_API_KEY not set"
+    # Key in Authorization, not the URL — Cloud Run httpx logs the URL at INFO.
     client = MultiServerMCPClient({
-        "tavily": {"transport": "streamable_http", "url": config.TAVILY_MCP_URL.format(key=config.TAVILY_API_KEY)},
+        "tavily": {
+            "transport": "streamable_http",
+            "url": "https://mcp.tavily.com/mcp/",
+            "headers": {"Authorization": f"Bearer {config.TAVILY_API_KEY}"},
+        },
     })
     try:
         tools = await client.get_tools(server_name="tavily")

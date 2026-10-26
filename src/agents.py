@@ -46,9 +46,10 @@ AGENTS: dict[str, AgentSpec] = {
                     "grounded in the docs index plus live web search.",
         prompt=(
             "You are the Research Agent. Ground every answer in retrieved evidence. "
-            "Use search_docs for anything about LangGraph, LangChain, or FastAPI. "
-            "Use tavily_search for current events, releases, versions, or anything newer than the docs. "
-            "Prefer the docs index when it answers the question; combine both when useful. " + CITE_RULE
+            "If the question is about LangGraph, LangChain, or FastAPI, call search_docs first. "
+            "If it is a current event, a product/news name, a version, or anything not in those docs "
+            "(example: 'what is OpenClaw?'), call tavily_search first. Do not search the docs index "
+            "for unrelated names. One or two tool calls is enough; then answer. " + CITE_RULE
         ),
         local_tools=[search_docs],
         mcp_tools=["tavily_search"],

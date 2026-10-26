@@ -13,7 +13,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from langchain_core.messages import AIMessageChunk, HumanMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
@@ -82,15 +82,27 @@ async def run_turn(body: ChatRequest) -> AsyncIterator[dict[str, str]]:
             yield sse("token", {"text": msg.text, "agent": agent})
 
         final = await graph.aget_state(cfg)
+        values = final.values or {}
+        answer, answer_agent = "", ""
+        for m in reversed(values.get("messages") or []):
+            if isinstance(m, AIMessage) and getattr(m, "name", None) in AGENTS and m.text:
+                answer, answer_agent = m.text, m.name
+                break
+        # Worker nodes use ainvoke, so token chunks often never reach the client.
+        # Always flush the final worker text if nothing streamed.
+        if first_token is None and answer:
+            first_token = time.perf_counter()
+            yield sse("token", {"text": answer, "agent": answer_agent})
         seen = set()
-        for c in final.values.get("citations", []):
+        for c in values.get("citations", []):
             if c["id"] not in seen:
                 seen.add(c["id"])
                 yield sse("citation", c)
         yield sse("done", {
             "total_ms": round((time.perf_counter() - start) * 1000),
             "ttft_ms": round((first_token - start) * 1000) if first_token else None,
-            "agents": final.values.get("turn", []),
+            "agents": values.get("turn", []),
+            "answer": answer,
         })
     except Exception as exc:
         log.exception("turn failed")

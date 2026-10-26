@@ -67,7 +67,10 @@ function parseFrames(buffer, onFrame) {
       if (line.startsWith("event:")) event = line.slice(6).trim();
       else if (line.startsWith("data:")) data += line.slice(5).trim();
     }
-    if (data) onFrame(event, JSON.parse(data));
+    if (data) {
+      try { onFrame(event, JSON.parse(data)); }
+      catch { /* incomplete frame */ }
+    }
   }
   return rest;
 }
@@ -80,31 +83,43 @@ async function send(query) {
   logEl.append(turn);
   citesEl.innerHTML = "";
   traceEl.append(el("li", "dim", `— turn ${turnNo} —`));
+  const status = el("div", "meta", "Waiting for supervisor…");
+  turn.append(status);
   let seg = null, segAgent = null;
 
   const onFrame = (event, data) => {
     if (event === "token") {
+      status.textContent = "Streaming…";
       if (!seg || data.agent !== segAgent) {
         if (seg) linkCitations(seg.body);
         segAgent = data.agent;
         seg = el("div", "seg");
         seg.append(el("span", "who", `${data.agent || "agent"} agent`), seg.body = el("div"));
-        turn.append(seg);
+        turn.insertBefore(seg, status);
       }
       seg.body.textContent += data.text;
       logEl.scrollTop = logEl.scrollHeight;
     } else if (event === "trace") {
       traceLine(data);
+      if (data.type === "agent_route") status.textContent = data.to === "FINISH" ? "Finishing…" : `Running ${data.to} agent…`;
+      if (data.type === "llm_route") status.textContent = `${data.agent} on ${data.provider}…`;
+      if (data.type === "mcp_tool_call") status.textContent = `${data.agent} called ${data.tool}…`;
+      if (data.type === "rag_retrieval") status.textContent = `Retrieved ${data.k || ""} docs chunks…`;
       if (data.type === "agent_route" || data.type === "llm_route") routeCard(data, turnNo);
     } else if (event === "error") {
       traceLine({ type: "error", ...data });
-      if (data.where === "graph") turn.append(el("div", "err", `Error: ${data.detail}`));
+      turn.insertBefore(el("div", "err", `${data.where || "error"}: ${data.detail || data.type}`), status);
     } else if (event === "citation") {
       addCitation(data);
     } else if (event === "done") {
+      if (!seg && data.answer) {
+        seg = el("div", "seg");
+        seg.append(el("span", "who", "agent"), seg.body = el("div", "", data.answer));
+        turn.insertBefore(seg, status);
+      }
       if (seg) linkCitations(seg.body);
       const who = (data.agents || []).map((a) => `${a.agent}${a.provider ? "@" + a.provider : ""}${a.ok ? "" : " (failed)"}`).join(" → ");
-      turn.append(el("div", "meta", `${who} · TTFT ${data.ttft_ms ?? "–"} ms · total ${data.total_ms} ms`));
+      status.textContent = `${who || "done"} · TTFT ${data.ttft_ms ?? "–"} ms · total ${data.total_ms} ms`;
     }
   };
 
@@ -124,6 +139,7 @@ async function send(query) {
     if (done) break;
     buffer = parseFrames(buffer + value, onFrame);
   }
+  if (buffer.trim()) parseFrames(buffer + "\n\n", onFrame);
 }
 
 $("form").addEventListener("submit", async (e) => {

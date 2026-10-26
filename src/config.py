@@ -26,7 +26,7 @@ CORPUS_DIR = Path(os.getenv("CORPUS_DIR", str(ROOT / "corpus")))
 RETRIEVAL_K = int(os.getenv("RETRIEVAL_K", "5"))
 
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
-TAVILY_MCP_URL = "https://mcp.tavily.com/mcp/?tavilyApiKey={key}"
+TAVILY_MCP_URL = "https://mcp.tavily.com/mcp/"
 
 STATE_BACKEND = os.getenv("STATE_BACKEND", "sqlite")
 SQLITE_STATE_PATH = os.getenv("SQLITE_STATE_PATH", str(ROOT / "state.sqlite"))

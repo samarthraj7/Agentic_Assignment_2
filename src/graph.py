@@ -28,7 +28,7 @@ from src.mcp_tools import for_agent
 
 log = logging.getLogger("graph")
 
-WORKER_TIMEOUT_S = 120
+WORKER_TIMEOUT_S = {"gemini": 25, "nvidia": 90}
 HISTORY = 6
 
 
@@ -83,7 +83,17 @@ async def supervisor(state: State) -> dict[str, Any]:
         writer({"type": "llm_route", "agent": "supervisor", **r.as_dict()})
         workers = "\n".join(f"- {a.name}: {a.description}" for a in AGENTS.values())
         prompt = SUPERVISOR_PROMPT.format(workers=workers, done=", ".join(done) or "none")
-        msgs = [SystemMessage(prompt), *state["messages"][-HISTORY:]]
+        # Gemini 400s on "requests ending with a model turn" if the last message is AI.
+        # Supervisor only needs the user query plus any worker findings from this turn.
+        msgs: list = [SystemMessage(prompt), HumanMessage(query)]
+        if done:
+            findings = "\n\n".join(
+                f"[{m.name}] {m.text[:800]}"
+                for m in state["messages"]
+                if isinstance(m, AIMessage) and m.name in done
+            )
+            if findings:
+                msgs.append(HumanMessage(f"Worker findings so far:\n{findings}"))
         decision = None
         for attempt in (r, alternate(r)):
             if attempt is None:
@@ -119,8 +129,8 @@ def make_worker(name: str, mcp_tools: dict[str, BaseTool]):
         task = HumanMessage(f"{query}\n\n{context}" if context else query)
         agent = create_react_agent(build_llm(r), tools, prompt=spec.prompt, name=name, checkpointer=False)
         out = await asyncio.wait_for(
-            agent.ainvoke({"messages": [*history, task]}, config={"recursion_limit": 12, "tags": [f"worker:{name}"]}),
-            WORKER_TIMEOUT_S,
+            agent.ainvoke({"messages": [*history, task]}, config={"recursion_limit": 8, "tags": [f"worker:{name}"]}),
+            WORKER_TIMEOUT_S.get(r.provider, 90),
         )
         return out["messages"]
 
