@@ -92,7 +92,7 @@ Pricing checked 2026-10-26. Embeddings are local ($0). Tavily is the student/fre
 | Summary (“summarize persistence.mdx”) | supervisor → summary → `fetch_document` | summary on Flash | fallback only | 0 unless URL | $0 + credit | 20–60 s |
 | Broken OpenClaw turn (2026-10-26, before fix) | Gemini 503 + 120 s Gemini timeout + NVIDIA + Tavily | 2 failures | 2 chat calls | 1 search | credit ~2.5 min | **146 s**, empty UI |
 
-A “run” is one `POST /api/chat`. The supervisor always spends one classification call. Each worker spends one generation plus its tools. Failover doubles the LLM calls for that hop.
+A “run” is one `POST /api/chat`. The supervisor always spends one classification call (~250 / 40 tokens). Each worker spends one generation plus its tools (~1,620 / 500 tokens for k=5 docs). Failover doubles the LLM calls for that hop. Paid Gemini list for a successful docs lookup is about **$0.0034**; this project stays on the free tier so the bill is **$0**. Token table: `docs/evaluation.md`.
 
 ## Latency (measured)
 
