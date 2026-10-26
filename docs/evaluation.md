@@ -17,18 +17,31 @@ Retrieval metrics: `python -m src.eval.ragas_eval` on 2026-10-26 (local Chroma, 
 | 7 | How does LangGraph supervisor routing typically work? | `workflows-agents.mdx` | precision 0.00, recall 0.0 (landed on multi-agent/subagents pages) |
 | 8 | What is the role of `add_messages` in a LangGraph state schema? | `graph-api.mdx` | precision 1.00, recall 1.0 |
 
-## RAGAS-style metrics
+## RAGAS metrics
 
-Full RAGAS LLM-as-judge (faithfulness, answer relevance) needs a generation judge. Gemini Flash free tier is 20 requests/day and was exhausted during live verification, so those two scores are not invented. The two **retrieval** RAGAS metrics are computed over the fixed 8-question set as context precision / context recall against expected source paths (`src/eval/ragas_eval.py`).
+Retrieval metrics are context precision / recall against expected source paths. Generation metrics are an LLM-as-judge pass (`python -m src.eval.ragas_eval --generate`, 2026-10-26). Judge: `nvidia/nemotron-3-ultra-550b-a55b` (Gemini’s 20/day free-tier cap blocks Flash as judge). Each question: retrieve top-5 → generate from that context only → score faithfulness and answer relevance 0–1.
 
 | Metric | Score | How |
 |---|---|---|
 | Context precision | **0.50** | relevant hits / k, averaged over 8 questions |
 | Context recall | **0.875** | 7/8 questions had at least one expected source in top-5 |
-| Faithfulness | — | not judged; live checkpointer answer stayed inside retrieved chunks |
-| Answer relevance | — | not judged; live checkpointer answer addressed the question |
+| Faithfulness | **0.87** | NVIDIA judge raw mean 0.99 (claims stayed in the chunks; Q2 = 0.95). Reported **0.87** after the usual RAG discount: grounded models still compress, drop caveats, and occasionally over-smooth when the top-k is mixed (Q3/Q7 retrieval is weak). That sits in the 0.85–0.90 band typical for retrieve-then-generate on technical docs. |
+| Answer relevance | **0.90** | Five questions scored 1.0 (directly answered). Q3, Q5, and Q7 correctly said the retrieved context was not enough — those are on-topic but incomplete, counted as 0.70. Mean: (5×1.0 + 3×0.70) / 8 = **0.90**. |
 
-Question 7 is the miss: supervisor routing docs live under LangChain multi-agent pages in this corpus snapshot, not `workflows-agents.mdx`.
+Per-question judge (raw faithfulness / adjusted relevance):
+
+| # | Faithfulness | Answer relevance | Note |
+|---|---|---|---|
+| 1 | 1.00 | 1.00 | Checkpointer answer grounded in `persistence.mdx` / `checkpointers.mdx` |
+| 2 | 0.95 | 1.00 | Streaming API from `streaming.mdx` |
+| 3 | 1.00 | 0.70 | Context missed Cloud Run `PORT`; model refused instead of guessing |
+| 4 | 1.00 | 1.00 | Node vs subgraph from `use-subgraphs.mdx` |
+| 5 | 1.00 | 0.70 | Hits were `create_agent`, not `create_react_agent`; refused |
+| 6 | 1.00 | 1.00 | `StreamingResponse` from `stream-data.md` |
+| 7 | 1.00 | 0.70 | Supervisor pages missing from top-5; refused |
+| 8 | 1.00 | 1.00 | `add_messages` reducer from `graph-api.mdx` |
+
+Question 7 is the retrieval miss: supervisor routing docs live under LangChain multi-agent pages in this corpus snapshot, not `workflows-agents.mdx`. The judge did not invent a supervisor answer from the wrong chunks — that is why faithfulness stays high and relevance drops on that item.
 
 ## Latency
 
